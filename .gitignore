@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/Logs/
+.git
+.env
+.vs
+.vscode
+*.user
+appsettings.json
