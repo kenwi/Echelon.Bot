@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Echelon.Bot.Interfaces;
+using Echelon.Bot.Models;
 
 namespace Echelon.Bot.Services;
 

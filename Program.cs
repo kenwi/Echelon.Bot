@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http;
 using Echelon.Bot.Interfaces;
+using Echelon.Bot.Models;
 
 var builder = Host.CreateDefaultBuilder(args);
 

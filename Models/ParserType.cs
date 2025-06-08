@@ -1,4 +1,4 @@
-namespace Echelon.Bot.Services;
+namespace Echelon.Bot.Models;
 
 public enum ParserType
 {

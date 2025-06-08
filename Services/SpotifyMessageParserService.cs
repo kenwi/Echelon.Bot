@@ -1,6 +1,7 @@
 using Discord.WebSocket;
 using Echelon.Bot.Interfaces;
 using Microsoft.Extensions.Logging;
+using Echelon.Bot.Models;
 
 namespace Echelon.Bot.Services;
 
