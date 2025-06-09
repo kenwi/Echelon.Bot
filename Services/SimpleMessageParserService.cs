@@ -11,6 +11,7 @@ public class SimpleMessageParserService : IMessageParserService
     private readonly ILogger<SimpleMessageParserService> _logger;
     private readonly N8NService _n8nService;
     private readonly Dictionary<string, List<string>> _allowedServersAndChannels;
+    private readonly IConfiguration _configuration;
 
     public SimpleMessageParserService(
         ILogger<SimpleMessageParserService> logger,
@@ -19,10 +20,11 @@ public class SimpleMessageParserService : IMessageParserService
     {
         _logger = logger;
         _n8nService = n8nService;
-        
+        _configuration = configuration;
+
         // Load allowed servers and channels from configuration
         _allowedServersAndChannels = configuration
-            .GetSection("Discord:AllowedServers")
+            .GetSection("Discord:SimpleMessageParserService")
             .Get<Dictionary<string, string[]>>()
             ?.ToDictionary(
                 kvp => kvp.Key,
@@ -38,7 +40,7 @@ public class SimpleMessageParserService : IMessageParserService
             _logger.LogInformation("Loaded {Count} server configurations", _allowedServersAndChannels.Count);
             foreach (var server in _allowedServersAndChannels)
             {
-                _logger.LogInformation("Server {Server} allows channels: {Channels}", 
+                _logger.LogInformation("Server {Server} allows channels: {Channels}",
                     server.Key, string.Join(", ", server.Value));
             }
         }
@@ -47,6 +49,10 @@ public class SimpleMessageParserService : IMessageParserService
     public async Task ParseMessageAsync(SocketMessage message)
     {
         if (message.Author.IsBot) return;
+
+        // TODO: This is a hack to get the N8N URL from the configuration. Implement a better strategy.
+        _n8nService.Endpoint = _configuration["Discord:SimpleMessageParserService:N8NUrl"] 
+            ?? throw new InvalidOperationException("N8N webhook URL not configured");
 
         _logger.LogInformation("Message received from {User}: {Content}", 
             message.Author.GlobalName, message.Content);

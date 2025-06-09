@@ -24,7 +24,7 @@ public abstract class BaseHttpService : IHttpService
         };
     }
 
-    public abstract string Endpoint { get; }
+    public abstract string Endpoint { get; set;}
 
     public async Task PostJsonAsync<T>(string endpoint, T data)
     {

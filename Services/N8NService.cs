@@ -6,7 +6,7 @@ namespace Echelon.Bot.Services;
 
 public class N8NService : BaseHttpService
 {
-    private readonly string _n8nUrl;
+    private string _n8nUrl;
     private readonly CultureInfo _culture;
     private readonly string _dateTimeFormat;
     private readonly bool _useLocalTime;
@@ -14,11 +14,14 @@ public class N8NService : BaseHttpService
     public N8NService(
         HttpClient httpClient,
         ILogger<N8NService> logger,
-        IConfiguration configuration) 
+        IConfiguration configuration,
+        string? endpointOverride = null) 
         : base(httpClient, logger)
     {
-        _n8nUrl = configuration["N8N:Url"] 
-            ?? throw new InvalidOperationException("N8N webhook URL not configured");
+        // _n8nUrl = configuration["N8N:Url"] 
+        //     ?? throw new InvalidOperationException("N8N webhook URL not configured");
+        // TODO: This is a hack to get the N8N URL from the configuration. Implement a better strategy.
+        _n8nUrl = string.Empty;
 
         // Get culture settings from configuration
         var cultureName = configuration["Logging:Settings:Culture"] ?? "nb-NO";
@@ -31,7 +34,11 @@ public class N8NService : BaseHttpService
         _useLocalTime = configuration.GetValue<bool>("Logging:Settings:UseLocalTime", true);
     }
 
-    public override string Endpoint => _n8nUrl;
+    public override string Endpoint
+    {
+        get => _n8nUrl;
+        set => _n8nUrl = value;
+    }
 
     public async Task SendNotificationAsync(N8NNotification notification)
     {
