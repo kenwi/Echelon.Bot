@@ -84,7 +84,7 @@ public class DiscordService
         var user = _client.GetUser(reaction.UserId) ?? await _client.GetUserAsync(reaction.UserId);
         var reactedMessage = message.Value ?? await message.DownloadAsync();
 
-        _logger.LogInformation("Reaction {Emote} added in channel {ChannelName} ({ChannelID}) by {UserGlobalName} ({UserId}) to message {MessageContent} ({MessageID})",
+        _logger.LogInformation("Reaction {Emote} added in channel {ChannelName} ({ChannelID}) by {UserGlobalName} ({UserId}) to message \"{MessageContent}\" ({MessageID})",
             reaction.Emote, channel.Value.Name, channel.Id, user?.GlobalName ?? "Unknown User", user?.Id ?? reaction.UserId, reactedMessage.Content, reactedMessage.Id);
     }
 
