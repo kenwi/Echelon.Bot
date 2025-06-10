@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Echelon.Bot.Interfaces;
 using Echelon.Bot.Models;
+using System.Text.Json;
 
 namespace Echelon.Bot.Services;
 
@@ -34,7 +35,8 @@ public class DiscordService
         {
             GatewayIntents = GatewayIntents.MessageContent | 
                             GatewayIntents.Guilds |
-                            GatewayIntents.GuildMessages
+                            GatewayIntents.GuildMessages |
+                            GatewayIntents.GuildMessageReactions
         };
 
         _client = new DiscordSocketClient(config);
@@ -42,6 +44,7 @@ public class DiscordService
         _client.Log += LogAsync;
         _client.Ready += ReadyAsync;
         _client.MessageReceived += MessageReceivedAsync;
+        _client.ReactionAdded += ReactionAddedAsync;
     }
 
     public async Task StartAsync()
@@ -73,6 +76,16 @@ public class DiscordService
         await _loggingService.LogMessageAsync(message);
         await _defaultParser.ParseMessageAsync(message);
         await _spotifyParser.ParseMessageAsync(message);
+    }
+    
+    private async Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
+    {
+        // Fetch the user and message from the cache or from the API if not in cache
+        var user = _client.GetUser(reaction.UserId) ?? await _client.GetUserAsync(reaction.UserId);
+        var reactedMessage = message.Value ?? await message.DownloadAsync();
+
+        _logger.LogInformation("Reaction {Emote} added in channel {ChannelName} ({ChannelID}) by {UserGlobalName} ({UserId}) to message {MessageContent} ({MessageID})",
+            reaction.Emote, channel.Value.Name, channel.Id, user?.GlobalName ?? "Unknown User", user?.Id ?? reaction.UserId, reactedMessage.Content, reactedMessage.Id);
     }
 
     public async Task StopAsync()
