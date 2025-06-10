@@ -1,4 +1,4 @@
-﻿using Echelon.Bot.Services;
+using Echelon.Bot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,20 +32,12 @@ builder.ConfigureServices((hostContext, services) =>
 
     // Register N8NService for DefaultMessageParser
     services.AddKeyedSingleton<N8NService>("Default", (sp, key) => {
-        var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-        var logger = sp.GetRequiredService<ILogger<N8NService>>();
-        var configuration = sp.GetRequiredService<IConfiguration>();
-        var endpointOverride = configuration["Discord:DefaultMessageParserService:N8NUrl"];
-        return new N8NService(httpClientFactory.CreateClient(), logger, configuration, endpointOverride);
+        return N8NServiceFactory.Create(sp, "DefaultMessageParserService");
     });
 
     // Register N8NService for Spotify
     services.AddKeyedSingleton<N8NService>("Spotify", (sp, key) => {
-        var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-        var logger = sp.GetRequiredService<ILogger<N8NService>>();
-        var configuration = sp.GetRequiredService<IConfiguration>();
-        var endpointOverride = configuration["Discord:SpotifyMessageParserService:N8NUrl"];
-        return new N8NService(httpClientFactory.CreateClient(), logger, configuration, endpointOverride);
+        return N8NServiceFactory.Create(sp, "SpotifyMessageParserService");
     });
 });
 
