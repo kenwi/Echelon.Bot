@@ -66,7 +66,7 @@ public class SpotifyMessageParserService : IMessageParserService
             Author = message.Author.Username,
             AuthorId = message.Author.Id.ToString(),
             GlobalName = message.Author.GlobalName,
-            Content = IsMessageSpotifyTrack(message.Content) ? GetSpotifyTrack(message.Content) : message.Content,
+            Content = IsMessageSpotifyTrack(message.Content) ? GetSpotifyTrackID(message.Content) : message.Content,
             ChannelId = message.Channel.Id.ToString(),
             Attachments = string.Join(", ", message.Attachments.Select(a => a.Url)),
             Embeds = string.Join(", ", message.Embeds.Select(e => e.Type.ToString())),
@@ -109,19 +109,11 @@ public class SpotifyMessageParserService : IMessageParserService
         return message is not null && message.Contains("https://open.spotify.com/track/");
     }
 
-    private string GetSpotifyTrack(string? message)
+    private string GetSpotifyTrackID(string? message)
     {
         if (message is null)
             return string.Empty;
 
         return $"spotify:track:{message.Split("https://open.spotify.com/track/").LastOrDefault() ?? string.Empty}";
-    }
-
-    private string GetSpotifyPlaylistId(string? message)
-    {
-        if (message is null)
-            return string.Empty;
-
-        return $"spotify:playlist:{message.Split("https://open.spotify.com/playlist/").LastOrDefault() ?? string.Empty}";
     }
 }
