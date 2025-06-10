@@ -51,10 +51,10 @@ public class SpotifyMessageParserService : IMessageParserService
     {
         if (message.Author.IsBot) return;
 
+        if (!IsChannelAllowed(message)) return;
+
         _logger.LogInformation("Message received from {User}: {Content}", 
             message.Author.GlobalName, message.Content);
-
-        if (!IsChannelAllowed(message)) return;
 
         // Forward the message to N8N
         var webhookMessage = new N8NNotification
