@@ -54,7 +54,7 @@ public class LoggingService
             .ToString(_dateTimeFormat, _culture);
             
         // Create the log entry
-        var logEntry = $"[{timestamp}] <{message.Author.GlobalName}> {message.Content}";
+        var logEntry = $"[{timestamp}] <{message.Author.GlobalName ?? message.Author.Username}> {message.Content}";
         if (message.Attachments.Count > 0)
         {
             logEntry += $"\nVedlegg: {string.Join(", ", message.Attachments.Select(a => a.Url))}";
