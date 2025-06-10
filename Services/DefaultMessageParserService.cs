@@ -3,19 +3,20 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Echelon.Bot.Interfaces;
 using Echelon.Bot.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Echelon.Bot.Services;
 
-public class SimpleMessageParserService : IMessageParserService
+public class DefaultMessageParserService : IMessageParserService
 {
-    private readonly ILogger<SimpleMessageParserService> _logger;
+    private readonly ILogger<DefaultMessageParserService> _logger;
     private readonly N8NService _n8nService;
     private readonly Dictionary<string, List<string>> _allowedServersAndChannels;
     private readonly IConfiguration _configuration;
 
-    public SimpleMessageParserService(
-        ILogger<SimpleMessageParserService> logger,
-        N8NService n8nService,
+    public DefaultMessageParserService(
+        ILogger<DefaultMessageParserService> logger,
+        [FromKeyedServices("Default")] N8NService n8nService,
         IConfiguration configuration)
     {
         _logger = logger;
@@ -24,7 +25,7 @@ public class SimpleMessageParserService : IMessageParserService
 
         // Load allowed servers and channels from configuration
         _allowedServersAndChannels = configuration
-            .GetSection("Discord:SimpleMessageParserService")
+            .GetSection("Discord:DefaultMessageParserService")
             .Get<Dictionary<string, string[]>>()
             ?.ToDictionary(
                 kvp => kvp.Key,
@@ -49,10 +50,6 @@ public class SimpleMessageParserService : IMessageParserService
     public async Task ParseMessageAsync(SocketMessage message)
     {
         if (message.Author.IsBot) return;
-
-        // TODO: This is a hack to get the N8N URL from the configuration. Implement a better strategy.
-        _n8nService.Endpoint = _configuration["Discord:SimpleMessageParserService:N8NUrl"] 
-            ?? throw new InvalidOperationException("N8N webhook URL not configured");
 
         _logger.LogInformation("Message received from {User}: {Content}", 
             message.Author.GlobalName, message.Content);

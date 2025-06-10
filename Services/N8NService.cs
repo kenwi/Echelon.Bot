@@ -18,10 +18,10 @@ public class N8NService : BaseHttpService
         string? endpointOverride = null) 
         : base(httpClient, logger)
     {
-        // _n8nUrl = configuration["N8N:Url"] 
-        //     ?? throw new InvalidOperationException("N8N webhook URL not configured");
-        // TODO: This is a hack to get the N8N URL from the configuration. Implement a better strategy.
-        _n8nUrl = string.Empty;
+        _n8nUrl = endpointOverride ?? string.Empty
+            ?? throw new InvalidOperationException("N8N webhook URL not configured");
+
+        logger.LogInformation("N8N webhook URL: {N8NUrl}", _n8nUrl);
 
         // Get culture settings from configuration
         var cultureName = configuration["Logging:Settings:Culture"] ?? "nb-NO";
@@ -34,11 +34,7 @@ public class N8NService : BaseHttpService
         _useLocalTime = configuration.GetValue<bool>("Logging:Settings:UseLocalTime", true);
     }
 
-    public override string Endpoint
-    {
-        get => _n8nUrl;
-        set => _n8nUrl = value;
-    }
+    public override string Endpoint => _n8nUrl;
 
     public async Task SendNotificationAsync(N8NNotification notification)
     {

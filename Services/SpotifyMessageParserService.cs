@@ -3,6 +3,7 @@ using Echelon.Bot.Interfaces;
 using Microsoft.Extensions.Logging;
 using Echelon.Bot.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Echelon.Bot.Services;
 
@@ -16,7 +17,7 @@ public class SpotifyMessageParserService : IMessageParserService
     public SpotifyMessageParserService(
         ILogger<SpotifyMessageParserService> logger,
         IConfiguration configuration,
-        N8NService n8nService)
+        [FromKeyedServices("Spotify")] N8NService n8nService)
     {
         _logger = logger;
         _n8nService = n8nService;
@@ -49,10 +50,6 @@ public class SpotifyMessageParserService : IMessageParserService
     public async Task ParseMessageAsync(SocketMessage message)
     {
         if (message.Author.IsBot) return;
-
-        // TODO: This is a hack to get the N8N URL from the configuration. Implement a better strategy.
-         _n8nService.Endpoint = _configuration["Discord:SpotifyMessageParserService:N8NUrl"] 
-             ?? throw new InvalidOperationException("N8N webhook URL not configured");
 
         _logger.LogInformation("Message received from {User}: {Content}", 
             message.Author.GlobalName, message.Content);
