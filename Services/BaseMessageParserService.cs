@@ -1,0 +1,108 @@
+using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using Echelon.Bot.Interfaces;
+using Echelon.Bot.Models;
+
+namespace Echelon.Bot.Services;
+
+public abstract class BaseMessageParserService : IMessageParserService
+{
+    protected readonly ILogger _logger;
+    protected readonly N8NService _n8nService;
+    protected readonly Dictionary<string, List<string>> _allowedServersAndChannels;
+
+    protected BaseMessageParserService(
+        ILogger logger,
+        N8NService n8nService,
+        IConfiguration configuration,
+        string configSection)
+    {
+        _logger = logger;
+        _n8nService = n8nService;
+
+        // Load allowed servers and channels from configuration
+        _allowedServersAndChannels = configuration
+            .GetSection($"Discord:{configSection}")
+            .Get<Dictionary<string, string[]>>()
+            ?.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.ToList()
+            ) ?? new Dictionary<string, List<string>>();
+
+        LogConfiguration();
+    }
+
+    private void LogConfiguration()
+    {
+        if (_allowedServersAndChannels.Count == 0)
+        {
+            _logger.LogWarning("No allowed servers and channels configured in appsettings.json");
+            return;
+        }
+
+        _logger.LogInformation("Loaded {Count} server configurations", _allowedServersAndChannels.Count);
+        foreach (var server in _allowedServersAndChannels)
+        {
+            _logger.LogInformation("Server {Server} allows channels: {Channels}", 
+                server.Key, string.Join(", ", server.Value));
+        }
+    }
+
+    protected bool IsChannelAllowed(SocketMessage message)
+    {
+        var serverName = GetServerName(message);
+        
+        if (!_allowedServersAndChannels.TryGetValue(serverName, out var allowedChannels))
+        {
+            _logger.LogInformation("Server {Server} is not in allowed list", serverName);
+            return false;
+        }
+
+        var isAllowed = allowedChannels.Contains(message.Channel.Name);
+        if (!isAllowed)
+        {
+            _logger.LogInformation("Channel {Channel} is not allowed in server {Server}", 
+                message.Channel.Name, serverName);
+        }
+        
+        return isAllowed;
+    }
+
+    protected string GetServerName(SocketMessage message)
+    {
+        return (message.Channel as SocketGuildChannel)?.Guild.Name ?? "Direct Message";
+    }
+
+    protected virtual N8NNotification CreateNotification(SocketMessage message)
+    {
+        return new N8NNotification
+        {
+            ServerName = GetServerName(message),
+            Id = message.Id.ToString(),
+            Type = message.Type.ToString(),
+            Channel = message.Channel.Name,
+            Author = message.Author.Username,
+            AuthorId = message.Author.Id.ToString(),
+            GlobalName = message.Author.GlobalName,
+            Content = message.Content,
+            ChannelId = message.Channel.Id.ToString(),
+            Attachments = string.Join(", ", message.Attachments.Select(a => a.Url)),
+            Embeds = string.Join(", ", message.Embeds.Select(e => e.Type.ToString())),
+            Mentions = string.Join(", ", message.MentionedUsers.Select(u => u.Username)),
+            Timestamp = message.Timestamp.UtcDateTime
+        };
+    }
+
+    public virtual async Task ParseMessageAsync(SocketMessage message)
+    {
+        if (message.Author.IsBot) return;
+        if (!IsChannelAllowed(message)) return;
+
+        _logger.LogInformation("Message received from {User}: {Content}", 
+            message.Author.GlobalName, message.Content);
+
+        var notification = CreateNotification(message);
+        await _n8nService.SendNotificationAsync(notification);
+    }
+}
