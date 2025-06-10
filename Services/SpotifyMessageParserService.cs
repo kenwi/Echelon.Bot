@@ -11,7 +11,6 @@ public class SpotifyMessageParserService : IMessageParserService
 {
     private readonly ILogger<SpotifyMessageParserService> _logger;
     private readonly N8NService _n8nService;
-    private readonly IConfiguration _configuration;
     private readonly Dictionary<string, List<string>> _allowedServersAndChannels;
 
     public SpotifyMessageParserService(
@@ -21,7 +20,6 @@ public class SpotifyMessageParserService : IMessageParserService
     {
         _logger = logger;
         _n8nService = n8nService;
-        _configuration = configuration;
 
         // Load allowed servers and channels from configuration
         _allowedServersAndChannels = configuration

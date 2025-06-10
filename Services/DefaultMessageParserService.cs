@@ -12,7 +12,6 @@ public class DefaultMessageParserService : IMessageParserService
     private readonly ILogger<DefaultMessageParserService> _logger;
     private readonly N8NService _n8nService;
     private readonly Dictionary<string, List<string>> _allowedServersAndChannels;
-    private readonly IConfiguration _configuration;
 
     public DefaultMessageParserService(
         ILogger<DefaultMessageParserService> logger,
@@ -21,7 +20,6 @@ public class DefaultMessageParserService : IMessageParserService
     {
         _logger = logger;
         _n8nService = n8nService;
-        _configuration = configuration;
 
         // Load allowed servers and channels from configuration
         _allowedServersAndChannels = configuration
