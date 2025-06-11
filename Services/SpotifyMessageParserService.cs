@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Echelon.Bot.Models;
+using Echelon.Bot.Constants;
 
 namespace Echelon.Bot.Services;
 
@@ -29,7 +30,7 @@ public class SpotifyMessageParserService : BaseMessageParserService
 
     private bool IsMessageSpotifyTrack(string? message)
     {
-        return message is not null && message.Contains("https://open.spotify.com/track/");
+        return message is not null && message.Contains(DiscordConstants.Urls.SpotifyTrackPrefix);
     }
 
     private string GetSpotifyTrackID(string? message)
@@ -37,6 +38,6 @@ public class SpotifyMessageParserService : BaseMessageParserService
         if (message is null)
             return string.Empty;
 
-        return $"spotify:track:{message.Split("https://open.spotify.com/track/").LastOrDefault() ?? string.Empty}";
+        return $"spotify:track:{message.Split(DiscordConstants.Urls.SpotifyTrackPrefix).LastOrDefault() ?? string.Empty}";
     }
 }
