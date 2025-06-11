@@ -4,13 +4,14 @@ using Microsoft.Extensions.Configuration;
 using Echelon.Bot.Interfaces;
 using Echelon.Bot.Models;
 
+
 namespace Echelon.Bot.Services;
 
 public abstract class BaseMessageParserService : IMessageParserService
 {
     protected readonly ILogger _logger;
     protected readonly N8NService _n8nService;
-    protected readonly Dictionary<string, List<string>> _allowedServersAndChannels;
+    protected readonly Dictionary<string, ServerConfiguration> _allowedServersAndChannels;
 
     protected BaseMessageParserService(
         ILogger logger,
@@ -24,11 +25,8 @@ public abstract class BaseMessageParserService : IMessageParserService
         // Load allowed servers and channels from configuration
         _allowedServersAndChannels = configuration
             .GetSection($"Discord:{configSection}")
-            .Get<Dictionary<string, string[]>>()
-            ?.ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value.ToList()
-            ) ?? new Dictionary<string, List<string>>();
+            .Get<Dictionary<string, ServerConfiguration>>()
+            ?? new Dictionary<string, ServerConfiguration>();
 
         LogConfiguration();
     }
@@ -44,8 +42,15 @@ public abstract class BaseMessageParserService : IMessageParserService
         _logger.LogInformation("Loaded {Count} server configurations", _allowedServersAndChannels.Count);
         foreach (var server in _allowedServersAndChannels)
         {
-            _logger.LogInformation("Server {Server} allows channels: {Channels}", 
-                server.Key, string.Join(", ", server.Value));
+            if (server.Value.AllowAllChannels)
+            {
+                _logger.LogInformation("Server {Server} allows ALL channels", server.Key);
+            }
+            else
+            {
+                _logger.LogInformation("Server {Server} allows channels: {Channels}", 
+                    server.Key, string.Join(", ", server.Value.Channels));
+            }
         }
     }
 
@@ -53,13 +58,22 @@ public abstract class BaseMessageParserService : IMessageParserService
     {
         var serverName = GetServerName(message);
         
-        if (!_allowedServersAndChannels.TryGetValue(serverName, out var allowedChannels))
+        if (!_allowedServersAndChannels.TryGetValue(serverName, out var serverConfig))
         {
             _logger.LogInformation("Server {Server} is not in allowed list", serverName);
             return false;
         }
 
-        var isAllowed = allowedChannels.Contains(message.Channel.Name);
+        // If AllowAllChannels is true, allow any channel
+        if (serverConfig.AllowAllChannels)
+        {
+            _logger.LogDebug("Channel {Channel} allowed in server {Server} (AllowAllChannels=true)", 
+                message.Channel.Name, serverName);
+            return true;
+        }
+
+        // Otherwise, check if the specific channel is in the allowed list
+        var isAllowed = serverConfig.Channels.Contains(message.Channel.Name);
         if (!isAllowed)
         {
             _logger.LogInformation("Channel {Channel} is not allowed in server {Server}", 
