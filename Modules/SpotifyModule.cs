@@ -28,17 +28,9 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
         [Summary("verbose", "Verbose mode")] bool state)
     {
         await DeferAsync();
+        var stateString = state ? "Enabled" : "Disabled";
+        await FollowupAsync($"Verbose mode {stateString}");
 
-        if (state)
-        {
-            await FollowupAsync("Verbose mode enabled");
-        }
-        else
-        {
-            await FollowupAsync("Verbose mode disabled");
-        }
-
-        // Send to N8N webhook using factory
         try
         {
             var content = new { verbose = state };
