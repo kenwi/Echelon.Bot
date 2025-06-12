@@ -2,6 +2,7 @@ namespace Echelon.Bot.Models;
 
 public class ServerConfiguration
 {
-    public string[] Channels { get; set; } = Array.Empty<string>();
     public bool AllowAllChannels { get; set; } = false;
+    public ServerOwnerConfiguration[] Owners { get; set; } = Array.Empty<ServerOwnerConfiguration>();
+    public ServerChannelConfiguration[] Channels { get; set; } = Array.Empty<ServerChannelConfiguration>();
 } 

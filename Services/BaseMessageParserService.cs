@@ -48,8 +48,9 @@ public abstract class BaseMessageParserService : IMessageParserService
             }
             else
             {
+                var channelNames = server.Value.Channels.Select(c => c.ChannelName);
                 _logger.LogInformation("Server {Server} allows channels: {Channels}", 
-                    server.Key, string.Join(", ", server.Value.Channels));
+                    server.Key, string.Join(", ", channelNames));
             }
         }
     }
@@ -72,12 +73,17 @@ public abstract class BaseMessageParserService : IMessageParserService
             return true;
         }
 
-        // Otherwise, check if the specific channel is in the allowed list
-        var isAllowed = serverConfig.Channels.Contains(message.Channel.Name);
+        // Check if the specific channel is in the allowed list (by name or ID)
+        var channelId = message.Channel.Id.ToString();
+        var channelName = message.Channel.Name;
+        
+        var isAllowed = serverConfig.Channels.Any(c => 
+            c.ChannelId == channelId || c.ChannelName == channelName);
+            
         if (!isAllowed)
         {
-            _logger.LogInformation("Channel {Channel} is not allowed in server {Server}", 
-                message.Channel.Name, serverName);
+            _logger.LogInformation("Channel {Channel} (ID: {ChannelId}) is not allowed in server {Server}", 
+                channelName, channelId, serverName);
         }
         
         return isAllowed;
