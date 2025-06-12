@@ -1,6 +1,7 @@
 **/bin/
 **/obj/
 **/Logs/
+**/docs/
 .git
 .env
 .vs
