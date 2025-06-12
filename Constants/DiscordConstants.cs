@@ -21,6 +21,7 @@ public static class DiscordConstants
     public static class MessageTypes
     {
         public const string SpotifyTrack = "SpotifyTrack";
+        public const string SpotifyAlbum = "SpotifyAlbum";
         public const string SpotifyRequest = "SpotifyRequest";
         public const string Default = "Default";
     }
