@@ -23,11 +23,22 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
         _n8nService = n8nService;
     }
 
+    private async Task<bool> EnsureGuildContextAsync()
+    {
+        if (Context.Guild == null)
+        {
+            await RespondAsync("This command can only be used in a server!", ephemeral: true);
+            return false;
+        }
+        return true;
+    }
+    
     [SlashCommand("create-playlist", "Create a playlist")]
     [RequireUserPermission(GuildPermission.Administrator)]
     public async Task CreatePlaylistAsync(
         [Summary("playlist-name", "Name of the playlist to create")] string playlistName)
     {
+        if (!await EnsureGuildContextAsync()) return;
         await DeferAsync();
 
         try
@@ -47,11 +58,11 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
     [RequireUserPermission(GuildPermission.Administrator)]
     public async Task FindDuplicatesAsync()
     {
+        if (!await EnsureGuildContextAsync()) return;
         await DeferAsync();
 
         try
         {
-
             var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "FindDuplicatesCommand", string.Empty);
             await _n8nService.SendNotificationAsync(n8nNotification);
             _logger.LogInformation("Verbose command notification sent to N8N successfully");
@@ -64,9 +75,12 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
     }
 
     [SlashCommand("verbose", "Set verbose mode. True = verbose, False = silent")]
+    [RequireUserPermission(GuildPermission.Administrator)]
     public async Task VerboseAsync(
         [Summary("verbose", "Verbose mode")] bool state)
     {
+        if (!await EnsureGuildContextAsync()) return;
+
         await DeferAsync();
         var stateString = state ? "Enabled" : "Disabled";
         await FollowupAsync($"Verbose mode {stateString}");
@@ -74,9 +88,9 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
         try
         {
             var content = new { verbose = state };
-            var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "VerboseCommand", 
+            var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "VerboseCommand",
                 JsonSerializer.Serialize(content));
-            
+
             await _n8nService.SendNotificationAsync(n8nNotification);
             _logger.LogInformation("Verbose command notification sent to N8N successfully");
         }

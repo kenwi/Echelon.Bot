@@ -78,13 +78,23 @@ public class SlashCommandService
     {
         try
         {
-            // Check if we have a test guild ID configured for faster registration
-            var testGuildIdString = _configuration["Discord:TestGuildId"];
+            // Check if we have test guild IDs configured for faster registration
+            var guildIds = _configuration.GetSection("Discord:GuildIds").Get<string[]>();
             
-            if (!string.IsNullOrEmpty(testGuildIdString) && ulong.TryParse(testGuildIdString, out var testGuildId))
+            if (guildIds != null && guildIds.Length > 0)
             {
-                await _interactions.RegisterCommandsToGuildAsync(testGuildId, deleteMissing: true);
-                _logger.LogInformation("Slash commands cleared and re-registered to test guild {GuildId}", testGuildId);
+                foreach (var guildIdString in guildIds)
+                {
+                    if (!string.IsNullOrEmpty(guildIdString) && ulong.TryParse(guildIdString, out var guildId))
+                    {
+                        await _interactions.RegisterCommandsToGuildAsync(guildId, deleteMissing: true);
+                        _logger.LogInformation("Slash commands cleared and re-registered to guild {GuildId}", guildId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Invalid guild ID: {GuildId}", guildIdString);
+                    }
+                }
             }
             else
             {
