@@ -7,6 +7,7 @@ using Echelon.Bot.Services;
 using Echelon.Bot.Models;
 using Echelon.Bot.Factories;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace Echelon.Bot.Modules;
 
@@ -19,7 +20,8 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
 
     public SpotifyModule(
         ILogger<SpotifyModule> logger,
-        [FromKeyedServices("Spotify")] N8NService n8nService)
+        IServiceProvider serviceProvider,
+        IConfiguration configuration)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
@@ -63,21 +65,24 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
     [SlashCommand("create-playlist", "Create a playlist")]
     [RequireUserPermission(GuildPermission.Administrator)]
     public async Task CreatePlaylistAsync(
-        [Summary("playlist-name", "Name of the playlist to create")] string playlistName)
+        [Summary("name", "Name of the playlist to create")] string playlistName,
+        [Summary("description", "Description for playlist")] string playlistDescription)
     {
         if (!await EnsureGuildContextAsync()) return;
         await DeferAsync();
-
+        
         try
         {
-
-            var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "CreatePlaylistCommand", playlistName);
-            await _n8nService.SendNotificationAsync(n8nNotification);
+            var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "CreatePlaylistCommand", $"{playlistName}::{playlistDescription}");
+            var response = await GetN8NServiceForGuild().SendNotificationAsync(n8nNotification);
+            var responseContent = await response.Content.ReadAsStringAsync();
             _logger.LogInformation("Create playlist command notification sent to N8N successfully");
+            await FollowupAsync($"{responseContent}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send verbose command notification to N8N");
+            await FollowupAsync("Failed to create playlist. Please try again.");
         }
     }
 
@@ -91,14 +96,15 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
         try
         {
             var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "FindDuplicatesCommand", string.Empty);
-            await _n8nService.SendNotificationAsync(n8nNotification);
+            var response = await GetN8NServiceForGuild().SendNotificationAsync(n8nNotification);
+            var responseContent = await response.Content.ReadAsStringAsync();
             _logger.LogInformation("Verbose command notification sent to N8N successfully");
+            await FollowupAsync($"{responseContent}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send verbose command notification to N8N");
         }
-        await FollowupAsync("Searching for duplicates");
     }
 
     [SlashCommand("verbose", "Set verbose mode. True = verbose, False = silent")]
@@ -110,7 +116,6 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
 
         await DeferAsync();
         var stateString = state ? "Enabled" : "Disabled";
-        await FollowupAsync($"Verbose mode {stateString}");
 
         try
         {
@@ -118,8 +123,9 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
             var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "VerboseCommand",
                 JsonSerializer.Serialize(content));
 
-            await _n8nService.SendNotificationAsync(n8nNotification);
+            await GetN8NServiceForGuild().SendNotificationAsync(n8nNotification);
             _logger.LogInformation("Verbose command notification sent to N8N successfully");
+            await FollowupAsync($"Verbose mode {stateString}");
         }
         catch (Exception ex)
         {
