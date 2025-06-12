@@ -23,6 +23,46 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
         _n8nService = n8nService;
     }
 
+    [SlashCommand("create-playlist", "Create a playlist")]
+    [RequireUserPermission(GuildPermission.Administrator)]
+    public async Task CreatePlaylistAsync(
+        [Summary("playlist-name", "Name of the playlist to create")] string playlistName)
+    {
+        await DeferAsync();
+
+        try
+        {
+
+            var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "CreatePlaylistCommand", playlistName);
+            await _n8nService.SendNotificationAsync(n8nNotification);
+            _logger.LogInformation("Create playlist command notification sent to N8N successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send verbose command notification to N8N");
+        }
+    }
+
+    [SlashCommand("find-duplicates", "Find duplicates in a channel playlist")]
+    [RequireUserPermission(GuildPermission.Administrator)]
+    public async Task FindDuplicatesAsync()
+    {
+        await DeferAsync();
+
+        try
+        {
+
+            var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "FindDuplicatesCommand", string.Empty);
+            await _n8nService.SendNotificationAsync(n8nNotification);
+            _logger.LogInformation("Verbose command notification sent to N8N successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send verbose command notification to N8N");
+        }
+        await FollowupAsync("Searching for duplicates");
+    }
+
     [SlashCommand("verbose", "Set verbose mode. True = verbose, False = silent")]
     public async Task VerboseAsync(
         [Summary("verbose", "Verbose mode")] bool state)
