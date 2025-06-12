@@ -26,19 +26,20 @@ public abstract class BaseHttpService : IHttpService
 
     public abstract string Endpoint { get; }
 
-    public async Task PostJsonAsync<T>(string endpoint, T data)
+    public async Task<HttpResponseMessage> PostJsonAsync<T>(string endpoint, T data)
     {
         try
         {
             var json = JsonSerializer.Serialize(data, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
             _logger.LogInformation("Sending POST request to {Endpoint} with data: {Data}", endpoint, json);
-            
+
             var response = await _httpClient.PostAsync(endpoint, content);
             response.EnsureSuccessStatusCode();
             
             _logger.LogInformation("Successfully sent POST request to {Endpoint}", endpoint);
+            return response;
         }
         catch (Exception ex)
         {

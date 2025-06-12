@@ -36,7 +36,7 @@ public class N8NService : BaseHttpService
 
     public override string Endpoint => _n8nUrl;
 
-    public async Task SendNotificationAsync(N8NNotification notification)
+    public async Task<HttpResponseMessage> SendNotificationAsync(N8NNotification notification)
     {
         // Format the timestamp according to configuration
         var timestamp = _useLocalTime 
@@ -44,6 +44,6 @@ public class N8NService : BaseHttpService
             : notification.Timestamp;
             
         notification.FormattedTimestamp = timestamp.ToString(_dateTimeFormat, _culture);
-        await PostJsonAsync(Endpoint, notification);
+        return await PostJsonAsync(Endpoint, notification);
     }
 }

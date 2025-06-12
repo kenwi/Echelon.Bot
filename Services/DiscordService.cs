@@ -80,12 +80,21 @@ public class DiscordService
     private async Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
     {
         // Fetch the user and message from the cache or from the API if not in cache
-        var user = _client.GetUser(reaction.UserId) ?? await _client.GetUserAsync(reaction.UserId);
-        var reactedMessage = message.Value ?? await message.DownloadAsync();
-        var messageChannel = channel.Value ?? await channel.DownloadAsync();
+        try
+        {
+            var user = _client.GetUser(reaction.UserId) ?? await _client.GetUserAsync(reaction.UserId);
+            var reactedMessage = message.Value ?? await message.DownloadAsync();
+            var messageChannel = channel.Value ?? await channel.DownloadAsync();
 
-        _logger.LogInformation("Reaction {Emote} added in channel {ChannelName} ({ChannelID}) by {UserGlobalName} ({UserId}) to message \"{MessageContent}\" ({MessageID})",
+            _logger.LogInformation("Reaction {Emote} added in channel {ChannelName} ({ChannelID}) by {UserGlobalName} ({UserId}) to message \"{MessageContent}\" ({MessageID})",
             reaction.Emote, messageChannel.Name, channel.Id, user?.GlobalName ?? "Unknown User", user?.Id ?? reaction.UserId, reactedMessage.Content, reactedMessage.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.
+            return;
+        }
+   
     }
 
     public async Task StopAsync()
