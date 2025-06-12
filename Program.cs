@@ -6,6 +6,9 @@ using Microsoft.Extensions.Http;
 using Echelon.Bot.Interfaces;
 using Echelon.Bot.Models;
 using Microsoft.Extensions.Logging;
+using Discord.Interactions;
+using Discord.WebSocket;
+using Discord;
 
 var builder = Host.CreateDefaultBuilder(args);
 
@@ -27,18 +30,39 @@ builder.ConfigureServices((hostContext, services) =>
     services.AddSingleton<DiscordService>();
     services.AddHostedService<Worker>();
     
+    // Add Discord Socket Client with proper configuration
+    services.AddSingleton(provider =>
+    {
+        var config = new DiscordSocketConfig
+        {
+            GatewayIntents = GatewayIntents.MessageContent |
+                            GatewayIntents.Guilds |
+                            GatewayIntents.GuildMessages |
+                            GatewayIntents.GuildMessageReactions |
+                            GatewayIntents.GuildIntegrations  // Required for slash commands
+        };
+        return new DiscordSocketClient(config);
+    });
+    
+    // Add Interaction Service for slash commands
+    services.AddSingleton(provider =>
+    {
+        var client = provider.GetRequiredService<DiscordSocketClient>();
+        return new Discord.Interactions.InteractionService(client);
+    });
+    services.AddSingleton<SlashCommandService>();
+    
     // Add HTTP client and N8N service
     services.AddHttpClient<N8NService>();
 
-    // Register N8NService for DefaultMessageParser
-    services.AddKeyedSingleton<N8NService>("Default", (sp, key) => {
-        return N8NServiceFactory.Create(sp, "DefaultMessageParserService");
-    });
+    static N8NService CreateN8NService(IServiceProvider sp, string parserType) =>
+        new(sp.GetRequiredService<IHttpClientFactory>().CreateClient(),
+            sp.GetRequiredService<ILogger<N8NService>>(),
+            sp.GetRequiredService<IConfiguration>(),
+            sp.GetRequiredService<IConfiguration>()[$"Discord:{parserType}MessageParserService:N8NUrl"]);
 
-    // Register N8NService for Spotify
-    services.AddKeyedSingleton<N8NService>("Spotify", (sp, key) => {
-        return N8NServiceFactory.Create(sp, "SpotifyMessageParserService");
-    });
+    services.AddKeyedSingleton("Default", (IServiceProvider sp, object? _) => CreateN8NService(sp, "Default"));
+    services.AddKeyedSingleton("Spotify", (IServiceProvider sp, object? _) => CreateN8NService(sp, "Spotify"));
 });
 
 var host = builder.Build();

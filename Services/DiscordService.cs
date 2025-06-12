@@ -17,30 +17,26 @@ public class DiscordService
     private readonly IMessageParserService _defaultParser;
     private readonly IMessageParserService _spotifyParser;
     private readonly LoggingService _loggingService;
+    private readonly SlashCommandService _slashCommandService;
 
     public DiscordService(
         IConfiguration configuration,
         ILogger<DiscordService> logger,
         [FromKeyedServices(ParserType.Default)] IMessageParserService defaultParser,
         [FromKeyedServices(ParserType.Spotify)] IMessageParserService spotifyParser,
-        LoggingService loggingService)
+        LoggingService loggingService,
+        DiscordSocketClient client,
+        SlashCommandService slashCommandService)
     {
         _configuration = configuration;
         _logger = logger;
         _defaultParser = defaultParser;
         _spotifyParser = spotifyParser;
         _loggingService = loggingService;
+        _client = client;
+        _slashCommandService = slashCommandService;
 
-        var config = new DiscordSocketConfig
-        {
-            GatewayIntents = GatewayIntents.MessageContent | 
-                            GatewayIntents.Guilds |
-                            GatewayIntents.GuildMessages |
-                            GatewayIntents.GuildMessageReactions
-        };
-
-        _client = new DiscordSocketClient(config);
-        
+        // Subscribe to events
         _client.Log += LogAsync;
         _client.Ready += ReadyAsync;
         _client.MessageReceived += MessageReceivedAsync;
@@ -65,10 +61,13 @@ public class DiscordService
         return Task.CompletedTask;
     }
 
-    private Task ReadyAsync()
+    private async Task ReadyAsync()
     {
         _logger.LogInformation($"{_client.CurrentUser} is connected!");
-        return Task.CompletedTask;
+        
+        // Initialize slash commands when bot is ready
+        await _slashCommandService.InitializeAsync();
+        await _slashCommandService.RegisterCommandsAsync();
     }
 
     private async Task MessageReceivedAsync(SocketMessage message)
@@ -83,9 +82,10 @@ public class DiscordService
         // Fetch the user and message from the cache or from the API if not in cache
         var user = _client.GetUser(reaction.UserId) ?? await _client.GetUserAsync(reaction.UserId);
         var reactedMessage = message.Value ?? await message.DownloadAsync();
+        var messageChannel = channel.Value ?? await channel.DownloadAsync();
 
         _logger.LogInformation("Reaction {Emote} added in channel {ChannelName} ({ChannelID}) by {UserGlobalName} ({UserId}) to message \"{MessageContent}\" ({MessageID})",
-            reaction.Emote, channel.Value.Name, channel.Id, user?.GlobalName ?? "Unknown User", user?.Id ?? reaction.UserId, reactedMessage.Content, reactedMessage.Id);
+            reaction.Emote, messageChannel.Name, channel.Id, user?.GlobalName ?? "Unknown User", user?.Id ?? reaction.UserId, reactedMessage.Content, reactedMessage.Id);
     }
 
     public async Task StopAsync()
