@@ -1,4 +1,4 @@
-using Echelon.Bot.Services;
+﻿using Echelon.Bot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,8 +15,8 @@ var builder = Host.CreateDefaultBuilder(args);
 builder.ConfigureAppConfiguration((hostContext, config) =>
 {
     config.SetBasePath(Directory.GetCurrentDirectory())
-          .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-          .AddJsonFile($"appsettings.{hostContext.HostingEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+          .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+          .AddJsonFile($"appsettings.{hostContext.HostingEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: false)
           .AddEnvironmentVariables();
 });
 
