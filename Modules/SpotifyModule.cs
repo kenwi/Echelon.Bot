@@ -13,14 +13,23 @@ namespace Echelon.Bot.Modules;
 public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
 {
     private readonly ILogger<SpotifyModule> _logger;
-    private readonly N8NService _n8nService;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IConfiguration _configuration;
+    private readonly Dictionary<string, ServerConfiguration> _allowedServersAndChannels;
 
     public SpotifyModule(
         ILogger<SpotifyModule> logger,
         [FromKeyedServices("Spotify")] N8NService n8nService)
     {
         _logger = logger;
-        _n8nService = n8nService;
+        _serviceProvider = serviceProvider;
+        _configuration = configuration;
+        
+        // Load allowed servers and channels from configuration
+        _allowedServersAndChannels = configuration
+            .GetSection("Discord:SpotifyMessageParserService")
+            .Get<Dictionary<string, ServerConfiguration>>()
+            ?? new Dictionary<string, ServerConfiguration>();
     }
 
     private async Task<bool> EnsureGuildContextAsync()
@@ -31,6 +40,24 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
             return false;
         }
         return true;
+    }
+
+    private N8NService GetN8NServiceForGuild()
+    {
+        var guildName = Context.Guild?.Name ?? "Unknown";
+        
+        if (_allowedServersAndChannels.TryGetValue(guildName, out var serverConfig) && 
+            !string.IsNullOrEmpty(serverConfig.N8NUrl))
+        {
+            // Create N8NService with server-specific URL
+            var httpClientFactory = _serviceProvider.GetRequiredService<IHttpClientFactory>();
+            var logger = _serviceProvider.GetRequiredService<ILogger<N8NService>>();
+            
+            return new N8NService(httpClientFactory.CreateClient(), logger, _configuration, serverConfig.N8NUrl);
+        }
+        
+        // Fallback to default service if no specific URL configured
+        throw new InvalidOperationException($"No N8N URL configured for server: {guildName}");
     }
 
     [SlashCommand("create-playlist", "Create a playlist")]

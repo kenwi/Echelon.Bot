@@ -4,24 +4,24 @@ using Microsoft.Extensions.Configuration;
 using Echelon.Bot.Interfaces;
 using Echelon.Bot.Models;
 using Echelon.Bot.Factories;
-
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Echelon.Bot.Services;
 
 public abstract class BaseMessageParserService : IMessageParserService
 {
     protected readonly ILogger _logger;
-    protected readonly N8NService _n8nService;
+    protected readonly IServiceProvider _serviceProvider;
     protected readonly Dictionary<string, ServerConfiguration> _allowedServersAndChannels;
 
     protected BaseMessageParserService(
         ILogger logger,
-        N8NService n8nService,
+        IServiceProvider serviceProvider,
         IConfiguration configuration,
         string configSection)
     {
         _logger = logger;
-        _n8nService = n8nService;
+        _serviceProvider = serviceProvider;
 
         // Load allowed servers and channels from configuration
         _allowedServersAndChannels = configuration
@@ -81,11 +81,11 @@ public abstract class BaseMessageParserService : IMessageParserService
         var isAllowed = serverConfig.Channels.Any(c => 
             c.ChannelId == channelId || c.ChannelName == channelName);
             
-        if (!isAllowed)
-        {
-            _logger.LogInformation("Channel {Channel} (ID: {ChannelId}) is not allowed in server {Server}", 
-                channelName, channelId, serverName);
-        }
+        // if (!isAllowed)
+        // {
+        //     _logger.LogInformation("Channel {Channel} (ID: {ChannelId}) is not allowed in server {Server}", 
+        //         channelName, channelId, serverName);
+        // }
         
         return isAllowed;
     }
@@ -100,6 +100,23 @@ public abstract class BaseMessageParserService : IMessageParserService
         return N8NNotificationFactory.FromMessage(message, message.Type.ToString());
     }
 
+    protected N8NService GetN8NServiceForServer(string serverName)
+    {
+        if (_allowedServersAndChannels.TryGetValue(serverName, out var serverConfig) && 
+            !string.IsNullOrEmpty(serverConfig.N8NUrl))
+        {
+            // Create N8NService with server-specific URL
+            var httpClientFactory = _serviceProvider.GetRequiredService<IHttpClientFactory>();
+            var logger = _serviceProvider.GetRequiredService<ILogger<N8NService>>();
+            var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
+            
+            return new N8NService(httpClientFactory.CreateClient(), logger, configuration, serverConfig.N8NUrl);
+        }
+        
+        // Fallback to default service if no specific URL configured
+        throw new InvalidOperationException($"No N8N URL configured for server: {serverName}");
+    }
+
     public virtual async Task ParseMessageAsync(SocketMessage message)
     {
         if (message.Author.IsBot) return;
@@ -108,7 +125,9 @@ public abstract class BaseMessageParserService : IMessageParserService
         _logger.LogInformation("Message received from {User}: {Content}", 
             message.Author.GlobalName, message.Content);
 
+        var serverName = GetServerName(message);
+        var n8nService = GetN8NServiceForServer(serverName);
         var notification = CreateNotification(message);
-        await _n8nService.SendNotificationAsync(notification);
+        var response = await n8nService.SendNotificationAsync(notification);
     }
 }

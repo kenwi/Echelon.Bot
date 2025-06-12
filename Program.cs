@@ -52,17 +52,8 @@ builder.ConfigureServices((hostContext, services) =>
     });
     services.AddSingleton<SlashCommandService>();
     
-    // Add HTTP client and N8N service
+    // Add HTTP client
     services.AddHttpClient<N8NService>();
-
-    static N8NService CreateN8NService(IServiceProvider sp, string parserType) =>
-        new(sp.GetRequiredService<IHttpClientFactory>().CreateClient(),
-            sp.GetRequiredService<ILogger<N8NService>>(),
-            sp.GetRequiredService<IConfiguration>(),
-            sp.GetRequiredService<IConfiguration>()[$"Discord:{parserType}MessageParserService:N8NUrl"]);
-
-    services.AddKeyedSingleton("Default", (IServiceProvider sp, object? _) => CreateN8NService(sp, "Default"));
-    services.AddKeyedSingleton("Spotify", (IServiceProvider sp, object? _) => CreateN8NService(sp, "Spotify"));
 });
 
 var host = builder.Build();

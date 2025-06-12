@@ -10,9 +10,9 @@ public class DefaultMessageParserService : BaseMessageParserService
 {
     public DefaultMessageParserService(
         ILogger<DefaultMessageParserService> logger,
-        [FromKeyedServices("Default")] N8NService n8nService,
+        IServiceProvider serviceProvider,
         IConfiguration configuration)
-        : base(logger, n8nService, configuration, "DefaultMessageParserService")
+        : base(logger, serviceProvider, configuration, "DefaultMessageParserService")
     {
     }
 }
