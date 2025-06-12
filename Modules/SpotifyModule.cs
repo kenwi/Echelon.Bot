@@ -27,12 +27,12 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
     {
         if (Context.Guild == null)
         {
-            await RespondAsync("This command can only be used in a server!", ephemeral: true);
+            await RespondAsync("This command can only be used in a server channel!", ephemeral: true);
             return false;
         }
         return true;
     }
-    
+
     [SlashCommand("create-playlist", "Create a playlist")]
     [RequireUserPermission(GuildPermission.Administrator)]
     public async Task CreatePlaylistAsync(
