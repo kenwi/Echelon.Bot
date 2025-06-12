@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Echelon.Bot.Interfaces;
 using Echelon.Bot.Models;
+using Echelon.Bot.Factories;
 
 
 namespace Echelon.Bot.Services;
@@ -96,22 +97,7 @@ public abstract class BaseMessageParserService : IMessageParserService
 
     protected virtual N8NNotification CreateNotification(SocketMessage message)
     {
-        return new N8NNotification
-        {
-            ServerName = GetServerName(message),
-            Id = message.Id.ToString(),
-            Type = message.Type.ToString(),
-            Channel = message.Channel.Name,
-            Author = message.Author.Username,
-            AuthorId = message.Author.Id.ToString(),
-            GlobalName = message.Author.GlobalName,
-            Content = message.Content,
-            ChannelId = message.Channel.Id.ToString(),
-            Attachments = string.Join(", ", message.Attachments.Select(a => a.Url)),
-            Embeds = string.Join(", ", message.Embeds.Select(e => e.Type.ToString())),
-            Mentions = string.Join(", ", message.MentionedUsers.Select(u => u.Username)),
-            Timestamp = message.Timestamp.UtcDateTime
-        };
+        return N8NNotificationFactory.FromMessage(message, message.Type.ToString());
     }
 
     public virtual async Task ParseMessageAsync(SocketMessage message)
