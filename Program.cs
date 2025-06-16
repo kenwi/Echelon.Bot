@@ -39,7 +39,8 @@ builder.ConfigureServices((hostContext, services) =>
                             GatewayIntents.Guilds |
                             GatewayIntents.GuildMessages |
                             GatewayIntents.GuildMessageReactions |
-                            GatewayIntents.GuildIntegrations  // Required for slash commands
+                            GatewayIntents.GuildIntegrations,  // Required for slash commands
+            ConnectionTimeout = 30000                          // 30 seconds (default: 6000)          
         };
         return new DiscordSocketClient(config);
     });
