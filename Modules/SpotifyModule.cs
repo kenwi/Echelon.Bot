@@ -86,6 +86,48 @@ public class SpotifyModule : InteractionModuleBase<SocketInteractionContext>
         }
     }
 
+    [SlashCommand("get-playlist", "Gets the playlist for the current channel")]
+    public async Task GetPlaylistAsync()
+    {
+        if (!await EnsureGuildContextAsync()) return;
+        await DeferAsync();
+
+        try
+        {
+            var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "GetPlaylistCommand", string.Empty);
+            var response = await GetN8NServiceForGuild().SendNotificationAsync(n8nNotification);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("Get playlist command notification sent to N8N successfully");
+            await FollowupAsync($"{responseContent}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send get playlist command notification to N8N");
+        }
+    }
+
+    [SlashCommand("bind-playlist", "Binds a playlist to the current channel")]
+    [RequireUserPermission(GuildPermission.Administrator)]
+    public async Task BindPlaylistAsync(
+        [Summary("playlist-url", "The URL of the playlist to bind")] string playlistUrl)
+    {
+        if (!await EnsureGuildContextAsync()) return;
+        await DeferAsync();
+
+        try
+        {
+            var n8nNotification = N8NNotificationFactory.FromInteractionContext(Context, "BindPlaylistCommand", playlistUrl);
+            var response = await GetN8NServiceForGuild().SendNotificationAsync(n8nNotification);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("Bind playlist command notification sent to N8N successfully");
+            await FollowupAsync($"{responseContent}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send bind playlist command notification to N8N");
+        }
+    }
+
     [SlashCommand("find-duplicates", "Find duplicates in a channel playlist")]
     [RequireUserPermission(GuildPermission.Administrator)]
     public async Task FindDuplicatesAsync()
