@@ -47,4 +47,26 @@ public abstract class BaseHttpService : IHttpService
             throw;
         }
     }
+
+    public async Task<T?> GetJsonAsync<T>(string endpoint)
+    {
+        try
+        {
+            _logger.LogInformation("Sending GET request to {Endpoint}", endpoint);
+
+            var response = await _httpClient.GetAsync(endpoint);
+            response.EnsureSuccessStatusCode();
+
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<T>(content, _jsonOptions);
+
+            _logger.LogInformation("Successfully received and deserialized response from {Endpoint}", endpoint);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending GET request to {Endpoint}", endpoint);
+            throw;
+        }
+    }
 } 
